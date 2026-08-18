@@ -10,7 +10,7 @@
   <style>
     :root{--bg:#f8fafc;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#0f172a;--soft:#eef2ff;--warn:#fff7ed;--danger:#fef2f2;--ok:#ecfdf5}
     *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding-bottom:88px}
-    .wrap{max-width:720px;margin:0 auto;padding:env(safe-area-inset-top) 16px 24px}
+    .wrap{width:min(100%,960px);margin:0 auto;padding:env(safe-area-inset-top) 16px 24px}
     header{padding:20px 4px 10px}.eyebrow{font-size:13px;color:var(--muted);font-weight:600}.title{font-size:30px;line-height:1.05;margin:4px 0 4px;font-weight:800}.sub{color:var(--muted);font-size:14px}
     .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;margin:12px 0;box-shadow:0 4px 16px rgba(15,23,42,.04)}
     .row{display:flex;gap:10px;align-items:center;justify-content:space-between}.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 10px;background:#f1f5f9;font-size:12px;font-weight:700}.h2{font-size:18px;font-weight:800;margin:0 0 12px}.big{font-size:22px;font-weight:800}.muted{color:var(--muted)}
@@ -20,8 +20,19 @@
     .guidance{padding:14px;border-radius:16px;background:var(--soft);margin-top:10px}.guidance.warn{background:var(--warn)}.guidance.danger{background:var(--danger)}.guidance.ok{background:var(--ok)}
     ul{margin:8px 0 0;padding-left:20px} li{margin:6px 0}.workout li{padding:6px 0;border-bottom:1px dashed var(--line)}
     .nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:8px 10px calc(8px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:6px}.nav button{flex:1;max-width:170px;border:0;background:transparent;padding:10px;border-radius:14px;font-weight:700;color:var(--muted)}.nav button.active{background:#f1f5f9;color:var(--text)}
-    .screen{display:none}.screen.active{display:block}.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.day{aspect-ratio:1;border:1px solid var(--line);border-radius:12px;padding:6px;font-size:11px;background:#fff}.day strong{display:block;font-size:12px}.day.today{outline:3px solid #cbd5e1}.day.inj{background:#fefce8}.day.run{background:#eff6ff}.day.str{background:#f5f3ff}.day.rest{background:#f8fafc}
+    .screen{display:none}.screen.active{display:block}.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}.day{min-width:0;min-height:82px;border:1px solid var(--line);border-radius:12px;padding:7px;font-size:11px;background:#fff;overflow:hidden}.day strong{display:block;font-size:12px}.day .date{display:block;margin-top:2px}.day .icon{display:block;margin-top:8px;font-size:18px}.day.today{outline:3px solid #cbd5e1;position:relative;z-index:1}.day.past{opacity:.38;filter:saturate(.55);background:#f1f5f9}.day.past strong,.day.past .date,.day.past .icon{color:#64748b}.day.past.today{opacity:1;filter:none}.day.inj{background:#fefce8}.day.run{background:#eff6ff}.day.str{background:#f5f3ff}.day.rest{background:#f8fafc}
     input[type=number]{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:14px;font-size:16px}.btn{width:100%;border:0;border-radius:14px;padding:12px 14px;background:var(--accent);color:white;font-weight:800}.tiny{font-size:12px;color:var(--muted)}
+
+    @media (max-width:560px){
+      .wrap{padding-left:12px;padding-right:12px}.title{font-size:27px}.card{border-radius:18px;padding:14px}.metrics{grid-template-columns:1fr 1fr}.week{gap:4px}.day{min-height:72px;padding:5px;font-size:10px}.day strong{font-size:10px}.day .icon{font-size:16px;margin-top:6px}.nav button{font-size:12px;padding:9px 6px}
+    }
+    @media (orientation:landscape) and (max-height:560px){
+      body{padding-bottom:68px}.wrap{width:min(100%,1100px);padding-top:4px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));padding-bottom:16px}header{padding:10px 4px 6px}.title{font-size:24px}.card{margin:8px 0;padding:12px;border-radius:16px}.metrics{grid-template-columns:repeat(4,1fr)}.check-grid{grid-template-columns:repeat(5,1fr)}.check{min-height:70px}.check.wide{grid-column:auto}.week{gap:6px}.day{min-height:68px}.nav{padding:5px max(10px,env(safe-area-inset-right)) calc(5px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}.nav button{padding:7px 10px}.h2{font-size:16px;margin-bottom:8px}
+    }
+    @media (min-width:760px){
+      #today.active{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}#today.active>header{grid-column:1/-1}.screen.active .card{margin:0 0 12px}.week{gap:8px}.day{min-height:96px;font-size:12px}.day strong{font-size:13px}.day .icon{font-size:20px}
+      #progress.active,#nutrition.active{max-width:760px;margin:0 auto}
+    }
   </style>
 </head>
 <body>
@@ -108,23 +119,30 @@ const today = new Date();
 const key = d => d.toISOString().slice(0,10);
 const fmt = d => d.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
 const daysBetween=(a,b)=>Math.floor((b-a)/86400000);
+const WEEK2_START = new Date('2026-08-24T00:00:00');
+function programWeek(date){
+  const d=new Date(date.getFullYear(),date.getMonth(),date.getDate());
+  if(d<START) return 0;
+  if(d<WEEK2_START) return 1;
+  return Math.floor(daysBetween(WEEK2_START,d)/7)+2;
+}
 
 document.getElementById('dateLine').textContent = fmt(today);
 const dIndex = daysBetween(START,new Date(today.getFullYear(),today.getMonth(),today.getDate()));
-const week = dIndex>=0 ? Math.floor(dIndex/7)+1 : 0;
+const week = programWeek(new Date(today.getFullYear(),today.getMonth(),today.getDate()));
 const inPlan = today>=START && today<=END;
 document.getElementById('programStatus').textContent = inPlan ? `Week ${week} of 12` : (today<START ? 'Starts Aug 20, 2026' : '12-week plan complete');
 document.getElementById('dayBadge').textContent = inPlan ? `Day ${dIndex+1}` : 'Program';
 
 function dayPlan(date){
-  const idx=daysBetween(START,date); const wk=Math.floor(idx/7)+1; const dow=date.getDay();
+  const idx=daysBetween(START,date); const wk=programWeek(date); const dow=date.getDay();
   const label=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dow];
   let type='rest', title='Recovery / walking', details=[];
   if(dow===1){type='str'; title='Strength A'; details=['Goblet squat — 3×8–12','DB bench press — 3×8–12','One-arm DB row — 3×8–12/side','DB Romanian deadlift — 3×8–12','DB shoulder press — 2×8–12','DB curls — 2×10–15','Plank — 2×30–60 sec'];}
   if(dow===2){type='run'; title='Easy run'; details=[wk<=4?'40–45 min easy': '45 min easy'];}
   if(dow===3){type='rest'; title='Recovery / walking'; details=['Aim for normal daily movement and 7k–10k steps if comfortable.'];}
   if(dow===4){
-    if(idx<7){type='rest'; title='Adaptation + injection night'; details=['No strength workout in the first partial week.'];}
+    if(wk===1){type='rest'; title='Adaptation + injection night'; details=['No strength workout in the first partial week.'];}
     else {type='str'; title='Strength B + injection night'; details=['DB reverse lunge — 3×8–10/leg','Incline DB bench — 3×8–12','One-arm DB row — 3×8–12/side','DB hip thrust — 3×10–15','DB lateral raise — 2×10–15','DB triceps extension — 2×10–15','Dead bug — 2×8–12/side'];}
   }
   if(dow===5){
@@ -133,7 +151,7 @@ function dayPlan(date){
     else {type='run'; title='Easy run'; details=['30–35 min easy; first workout to drop if recovery is poor.'];}
   }
   if(dow===6){type='run';
-    if(idx<7){title='Easy run'; details=['35–45 min / about 3–4 miles'];}
+    if(wk===1){title='Easy run'; details=['35–45 min / about 3–4 miles'];}
     else if(wk<=4){title='Easy/moderate run'; details=['40–45 min'];}
     else if(wk<=8){title='Longer run'; details=[wk%2===0?'50–55 min with 3 × 5-min moderate segments':'50–55 min entirely easy'];}
     else {title='Long run'; details=[wk%2===0?'55–60 min with controlled moderate segments':'50–60 min easy'];}
@@ -177,13 +195,24 @@ renderToday();
 // Calendar
 const cal=document.getElementById('calendar');
 for(let w=1;w<=12;w++){
-  const box=document.createElement('div'); box.className='card'; box.innerHTML=`<div class="h2">Week ${w}</div>`;
-  const grid=document.createElement('div'); grid.className='week';
-  for(let i=0;i<7;i++){
-    const d=new Date(START); d.setDate(START.getDate()+(w-1)*7+i);
-    const p=dayPlan(d); const cell=document.createElement('div'); cell.className=`day ${p.type} ${p.inj?'inj':''} ${key(d)===key(today)?'today':''}`;
-    cell.innerHTML=`<strong>${p.label}</strong>${d.getMonth()+1}/${d.getDate()}<br>${p.inj?'💉 ':''}${p.type==='str'?'🏋️':p.type==='run'?'🏃':'🚶'}`; grid.appendChild(cell);
+  const box=document.createElement('div'); box.className='card';
+  const rangeStart = w===1 ? new Date(START) : new Date(WEEK2_START.getFullYear(),WEEK2_START.getMonth(),WEEK2_START.getDate()+(w-2)*7);
+  const rangeEnd = w===1 ? new Date('2026-08-23T00:00:00') : new Date(rangeStart.getFullYear(),rangeStart.getMonth(),rangeStart.getDate()+6);
+  box.innerHTML=`<div class="row"><div class="h2" style="margin:0">Week ${w}</div><div class="tiny">${rangeStart.toLocaleDateString(undefined,{month:'short',day:'numeric'})}–${rangeEnd.toLocaleDateString(undefined,{month:'short',day:'numeric'})}</div></div>`;
+  const grid=document.createElement('div'); grid.className='week'; grid.style.marginTop='12px';
+  const dates=[];
+  if(w===1){
+    dates.push(null,null,null); // Mon–Wed placeholders so Thu–Sun align correctly
+    for(let i=0;i<4;i++){const d=new Date(START); d.setDate(START.getDate()+i); dates.push(d);}
+  } else {
+    for(let i=0;i<7;i++){const d=new Date(rangeStart); d.setDate(rangeStart.getDate()+i); dates.push(d);}
   }
+  dates.forEach((d,i)=>{
+    const cell=document.createElement('div');
+    if(!d){cell.className='day rest';cell.style.visibility='hidden';grid.appendChild(cell);return;}
+    const p=dayPlan(d); const isToday=key(d)===key(today); const isPast=d < new Date(today.getFullYear(),today.getMonth(),today.getDate()); cell.className=`day ${p.type} ${p.inj?'inj':''} ${isPast?'past':''} ${isToday?'today':''}`;
+    cell.innerHTML=`<strong>${p.label}</strong><span class="date">${d.getMonth()+1}/${d.getDate()}</span><span class="icon">${p.inj?'💉 ':''}${p.type==='str'?'🏋️':p.type==='run'?'🏃':'🚶'}</span>`; grid.appendChild(cell);
+  });
   box.appendChild(grid); cal.appendChild(box);
 }
 
