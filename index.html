@@ -84,7 +84,7 @@
   </section>
 
   <section id="plan" class="screen">
-    <div class="card"><div class="h2">12-week calendar</div><div class="tiny">Starts Thu, Aug 20, 2026. Strength = purple, run = blue, injection = yellow.</div></div>
+    <div class="card"><div class="h2">12-week calendar</div><div class="tiny">Starts Mon, Aug 17, 2026. First injection is Thu, Aug 20. Strength = purple, run = blue, injection = yellow.</div></div>
     <div id="calendar"></div>
   </section>
 
@@ -113,25 +113,24 @@
 </nav>
 
 <script>
-const START = new Date('2026-08-20T00:00:00');
+const START = new Date('2026-08-17T00:00:00');
+const FIRST_INJECTION = new Date('2026-08-20T00:00:00');
 const END = new Date('2026-11-08T23:59:59');
 const today = new Date();
 const key = d => d.toISOString().slice(0,10);
 const fmt = d => d.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
 const daysBetween=(a,b)=>Math.floor((b-a)/86400000);
-const WEEK2_START = new Date('2026-08-24T00:00:00');
 function programWeek(date){
   const d=new Date(date.getFullYear(),date.getMonth(),date.getDate());
   if(d<START) return 0;
-  if(d<WEEK2_START) return 1;
-  return Math.floor(daysBetween(WEEK2_START,d)/7)+2;
+  return Math.floor(daysBetween(START,d)/7)+1;
 }
 
 document.getElementById('dateLine').textContent = fmt(today);
 const dIndex = daysBetween(START,new Date(today.getFullYear(),today.getMonth(),today.getDate()));
 const week = programWeek(new Date(today.getFullYear(),today.getMonth(),today.getDate()));
 const inPlan = today>=START && today<=END;
-document.getElementById('programStatus').textContent = inPlan ? `Week ${week} of 12` : (today<START ? 'Starts Aug 20, 2026' : '12-week plan complete');
+document.getElementById('programStatus').textContent = inPlan ? `Week ${week} of 12` : (today<START ? 'Starts Aug 17, 2026' : '12-week plan complete');
 document.getElementById('dayBadge').textContent = inPlan ? `Day ${dIndex+1}` : 'Program';
 
 function dayPlan(date){
@@ -142,7 +141,7 @@ function dayPlan(date){
   if(dow===2){type='run'; title='Easy run'; details=[wk<=4?'40–45 min easy': '45 min easy'];}
   if(dow===3){type='rest'; title='Recovery / walking'; details=['Aim for normal daily movement and 7k–10k steps if comfortable.'];}
   if(dow===4){
-    if(wk===1){type='rest'; title='Adaptation + injection night'; details=['No strength workout in the first partial week.'];}
+    if(wk===1){type='rest'; title='First injection night'; details=['Keep training light today while you begin tirzepatide.','Injection #1 tonight.'];}
     else {type='str'; title='Strength B + injection night'; details=['DB reverse lunge — 3×8–10/leg','Incline DB bench — 3×8–12','One-arm DB row — 3×8–12/side','DB hip thrust — 3×10–15','DB lateral raise — 2×10–15','DB triceps extension — 2×10–15','Dead bug — 2×8–12/side'];}
   }
   if(dow===5){
@@ -157,7 +156,9 @@ function dayPlan(date){
     else {title='Long run'; details=[wk%2===0?'55–60 min with controlled moderate segments':'50–60 min easy'];}
   }
   if(dow===0){type='rest'; title='Rest / easy walking'; details=['No formal workout required.'];}
-  return {wk,label,type,title,details,inj:dow===4};
+  const inj = dow===4 && date>=FIRST_INJECTION && date<=END;
+  const injNum = inj ? Math.floor(daysBetween(FIRST_INJECTION,date)/7)+1 : null;
+  return {wk,label,type,title,details,inj,injNum};
 }
 
 let symptoms=JSON.parse(localStorage.getItem('symptoms:'+key(today))||'{}');
@@ -189,6 +190,10 @@ function renderToday(){
   else {meals=['Breakfast: 400–450 cal / 35–40 g protein','Lunch: 550–650 cal / 45–55 g protein','Snack: 150–250 cal / 20–30 g protein','Dinner: 600–700 cal / 45–50 g protein','Flex: 100–200 cal'];}
   document.getElementById('mealBody').innerHTML='<ul>'+meals.map(x=>`<li>${x}</li>`).join('')+'</ul>';
   document.getElementById('injCard').style.display=p.inj?'block':'none';
+  if(p.inj){
+    document.querySelector('#injCard .h2').textContent=`💉 Injection #${p.injNum} tonight`;
+    document.querySelector('#injCard .muted').textContent=p.injNum===1?'Tirzepatide — first dose, Thursday night':'Tirzepatide — Thursday night';
+  }
 }
 renderToday();
 
@@ -196,23 +201,21 @@ renderToday();
 const cal=document.getElementById('calendar');
 for(let w=1;w<=12;w++){
   const box=document.createElement('div'); box.className='card';
-  const rangeStart = w===1 ? new Date(START) : new Date(WEEK2_START.getFullYear(),WEEK2_START.getMonth(),WEEK2_START.getDate()+(w-2)*7);
-  const rangeEnd = w===1 ? new Date('2026-08-23T00:00:00') : new Date(rangeStart.getFullYear(),rangeStart.getMonth(),rangeStart.getDate()+6);
+  const rangeStart = new Date(START.getFullYear(),START.getMonth(),START.getDate()+(w-1)*7);
+  const rangeEnd = new Date(rangeStart.getFullYear(),rangeStart.getMonth(),rangeStart.getDate()+6);
   box.innerHTML=`<div class="row"><div class="h2" style="margin:0">Week ${w}</div><div class="tiny">${rangeStart.toLocaleDateString(undefined,{month:'short',day:'numeric'})}–${rangeEnd.toLocaleDateString(undefined,{month:'short',day:'numeric'})}</div></div>`;
   const grid=document.createElement('div'); grid.className='week'; grid.style.marginTop='12px';
-  const dates=[];
-  if(w===1){
-    dates.push(null,null,null); // Mon–Wed placeholders so Thu–Sun align correctly
-    for(let i=0;i<4;i++){const d=new Date(START); d.setDate(START.getDate()+i); dates.push(d);}
-  } else {
-    for(let i=0;i<7;i++){const d=new Date(rangeStart); d.setDate(rangeStart.getDate()+i); dates.push(d);}
-  }
-  dates.forEach((d,i)=>{
+  for(let i=0;i<7;i++){
+    const d=new Date(rangeStart); d.setDate(rangeStart.getDate()+i);
+    const p=dayPlan(d);
+    const isToday=key(d)===key(today);
+    const isPast=d < new Date(today.getFullYear(),today.getMonth(),today.getDate());
     const cell=document.createElement('div');
-    if(!d){cell.className='day rest';cell.style.visibility='hidden';grid.appendChild(cell);return;}
-    const p=dayPlan(d); const isToday=key(d)===key(today); const isPast=d < new Date(today.getFullYear(),today.getMonth(),today.getDate()); cell.className=`day ${p.type} ${p.inj?'inj':''} ${isPast?'past':''} ${isToday?'today':''}`;
-    cell.innerHTML=`<strong>${p.label}</strong><span class="date">${d.getMonth()+1}/${d.getDate()}</span><span class="icon">${p.inj?'💉 ':''}${p.type==='str'?'🏋️':p.type==='run'?'🏃':'🚶'}</span>`; grid.appendChild(cell);
-  });
+    cell.className=`day ${p.type} ${p.inj?'inj':''} ${isPast?'past':''} ${isToday?'today':''}`;
+    const injectionLabel=p.inj?`<span class="tiny" style="display:block;margin-top:4px">Injection #${p.injNum}</span>`:'';
+    cell.innerHTML=`<strong>${p.label}</strong><span class="date">${d.getMonth()+1}/${d.getDate()}</span><span class="icon">${p.inj?'💉 ':''}${p.type==='str'?'🏋️':p.type==='run'?'🏃':'🚶'}</span>${injectionLabel}`;
+    grid.appendChild(cell);
+  }
   box.appendChild(grid); cal.appendChild(box);
 }
 
